@@ -13,7 +13,7 @@ Provide Move Out! with a collection of rules based on various attributes such as
 description. For example,  
 
 **Price:** *< 500 / month*  
-**Description:** *"Shared accomodation"* AND *"Hot Women"*  
+**Description:** *"Shared accommodation"* AND *"Hot Women"*  
 **Location:** *"College"*  
 
 and watch as it crawls the far corners of the web searching for that *perfect place*
