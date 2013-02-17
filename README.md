@@ -10,8 +10,13 @@ How it Works
 --------------
 
 Provide Move Out! with a collection of rules based on various attributes such as location, price, and
-description. For example, Price: *< 500 / month*,  Description:*"Shared accomodation"* AND *"Hot Women"*,
-Location:*"College"* and watch as it crawls the far corners of the web searching for that *perfect place*
+description. For example,  
+
+**Price:** *< 500 / month*  
+**Description:** *"Shared accomodation"* AND *"Hot Women"*  
+**Location:** *"College"*  
+
+and watch as it crawls the far corners of the web searching for that *perfect place*
 to kick... ahem, move that certain-someone into.
 
 
