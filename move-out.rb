@@ -28,6 +28,12 @@
 require 'nokogiri'
 require 'open-uri'
 
+# Mediocre system, this needs to be improved
+$mediocre_system = { :price => 600.00, 
+                    :description => ['senior', 'washroom', 'female', 'woman', 'family'],
+                    :location => ['scarborough', 'markham', 'toronto', 'etobicoke']}
+
+
 class String
   def is_number?
     true if Float(self) rescue false
@@ -35,7 +41,8 @@ class String
 end
 
 
-def kijiji_realestate()
+# Get the URI to the real estate page on kijiji
+def realestate_uri()
     page = Nokogiri::HTML(open('http://www.kijiji.com'))
 
     # Get the link to the real-estate page on kijiji
@@ -48,22 +55,87 @@ def kijiji_realestate()
     end
 end
 
+# Return an array of the URIs to the rooms found on kijiji
+def kijiji_rooms(page)
+    # Array of the rooms found with URI to the room posting
+    rooms_uri = []
 
-# Mediocre system, this needs to be improved
-mediocre_system = {:price => 600.00}
+    page.css('td.prc > strong').each do |item|
+        price = item.content.strip
 
+        # Return the link to the listing if price is below the specified price or as "Please contact"
+        if (price.gsub(/[$,]/, '').is_number? and price.gsub(/[$,]/, '').to_f <= $mediocre_system[:price]) or price =~ /please\s+contact/i
 
-# Use the price factor of our mediocre system to identify potential housing
-first_realestate_page = kijiji_realestate()
-
-page = Nokogiri::HTML(open(first_realestate_page))
-
-page.css('td.prc > strong').each do |item|
-    
-    price = item.content.strip
-
-    # Return the link to the listing if price is below the specified price or as "Please contact"
-    if (price.gsub(/[$,]/, '').is_number? and price.gsub(/[$,]/, '').to_f <= mediocre_system[:price]) or price =~ /please\s+contact/i
-        puts price.gsub(/[$,]/, '')
+            rooms_uri << item.xpath('../../td/a').to_s.match(/href="(.*?)"/)[1]
+        end
     end
+
+    return rooms_uri
+end
+
+
+
+
+
+# Get the main kijij page
+page = Nokogiri::HTML(open(realestate_uri()))
+
+# Iterate through each of rooms found and display the results
+#rooms = { :url => {:price => 0.00 , :title => '', :location => '', :contact => []} }
+rooms = {}
+
+kijiji_rooms(page).each do |room_uri|
+    page_room = Nokogiri::HTML(open(room_uri))
+
+    location = ''
+    description = ''
+
+    # Add get the location and description 
+    page_room.css('a.viewmap-link').each do |map_link|
+        location = map_link.xpath('..').to_s.match(/<td>(.*)<br>/im)[1]
+        location.strip!
+    end
+
+    page_room.css('span#preview-local-desc').each do |desc|
+        description = desc.content.strip
+        description.gsub!(/<br>/, '')
+    end
+
+    # If the location matches then add the room url to the dictionary
+    $mediocre_system[:location].each do |cur_location|
+        if location =~ /#{cur_location}/im
+            rooms[room_uri] = {:uri => room_uri, :location => location}
+            break
+        end
+    end
+
+    # If the room did not match the location continue
+    if rooms[room_uri].nil?
+        next
+    end
+
+    # Add the ad title
+    page_room.css('h1#preview-local-title').each do |item|
+        title = item.content.to_s.strip
+        rooms[room_uri][:title] = title
+    end
+
+    # Add the price of the room
+    page_room.css('tr td.first_col + td[style]').each do |item|
+        price = item.content.to_s.strip
+        rooms[room_uri][:price] = price.gsub(/[$,]/, '')
+    end
+
+    # Add the contact information if found in the description
+    if description =~ /\d{3}[-\s]{0,1}\d{3}[-\s]{0,1}\d{4}/im
+        rooms[room_uri][:contact] = description.scan(/\d{3}[-\s]{0,1}\d{3}[-\s]{0,1}\d{4}/im)
+    end
+end
+
+rooms.each do |key, value|
+    puts "\nTITLE: #{value[:title]}"
+    puts "PRICE: #{value[:price]}"
+    puts "LOCATION: #{value[:location]}"
+    puts "CONTACT: #{value[:contact]}"
+    puts "URL: #{value[:uri]}\n"
 end
